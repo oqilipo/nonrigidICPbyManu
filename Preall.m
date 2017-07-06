@@ -1,12 +1,17 @@
-function [Prealligned_source,Prealligned_target,transformtarget ]=Preall(target,source)
+function [Prealligned_source,Prealligned_target,transformtarget]=Preall(target,source)
+%PREALL 
+% This function performs a first and rough pre-alligment of the data as 
+% starting position for the iterative allignment and scaling procedure.
+%
+% Initial positioning of the data is based on alligning the coordinates of 
+% the objects, which are assumed to be of similar shape, following 
+% principal component analysis
 
-% This function performs a first and rough pre-alligment of the data as starting position for the iterative allignment and scaling procedure
+addpath(fullfile(fileparts([mfilename('fullpath'), '.m']), 'res'))
 
-% Initial positioning of the data is based on alligning the coordinates of the objects -which are assumed to be close/similar in shape- following principal component analysis
+[~,Prealligned_source] = princomp(source);
 
-[COEFF,Prealligned_source] = princomp(source);
-
-[COEFF,Prealligned_target] = princomp(target);
+[~,Prealligned_target] = princomp(target);
 
 % the direction of the axes is than evaluated and corrected if necesarry.
 Maxtarget=max(Prealligned_source)-min(Prealligned_source);
@@ -19,12 +24,12 @@ load R
 for i=1:8
     T=R{1,i};
     T=RTY*T;
-    [bb DD]=knnsearch(T,Prealligned_target);
+    [~, DD]=knnsearch(T,Prealligned_target);
     MM(i,1)=sum(DD);
 end
 
-[M I]=min(MM);
+[~, I]=min(MM);
  T=R{1,I};
  Prealligned_source=Prealligned_source*T;
  
- [d,Z,transformtarget] = procrustes(target,Prealligned_target);
+ [~,~,transformtarget] = procrustes(target,Prealligned_target);
