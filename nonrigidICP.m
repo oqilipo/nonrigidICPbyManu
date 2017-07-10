@@ -9,7 +9,7 @@ function [registered,targetV,targetF]=nonrigidICP(targetV,sourceV,targetF,source
 %   -sourceF: faces of source mesh (n*3 array)
 % 
 % OPTIONAL INPUT
-%   -'iterations': number of iterations; usually between 10 (default) and 30
+%   -'iterations': number of iterations; usually between 10 (default) & 30
 %   -'preAllFlag': true or false (default)
 %       true if the data is already alligned (manual or landmark based)
 %       false if the data still need to be roughly alligned
@@ -124,9 +124,12 @@ end
 
 
 %% General deformation
-if verb; disp(' - General deformation'); end
 kernel1=1.5:-(0.5/iterations):1;
 kernel2=2.4:(0.3/iterations):2.7;
+if verb
+    textprogressbar(' - General deformation:  ');
+    progressbarvector=round((1:iterations)/iterations*100);
+end
 for i =1:iterations
     nrseedingpoints=round(10^(kernel2(1,i)));
     %     nrseedingpoints=250;
@@ -203,12 +206,13 @@ for i =1:iterations
         alpha(0.6)
         drawnow
     end
-    
+    if verb; textprogressbar(progressbarvector(i)); end
 end
+if verb; textprogressbar(' Done.'); end
 
 
 %% local deformation
-if verb; disp(' - Local optimization'); end
+if verb; textprogressbar(' - Local optimization:   '); end
 arraymap = repmat(cell(1),p,1);
 kk=12+iterations;
 
@@ -238,7 +242,6 @@ end
 
 for ddd=1:iterations
     k=kk-ddd;
-    if verb; tic; end
     
     TRS = triangulation(sourceF,sourceV);
     normalsS=vertexNormal(TRS).*cutoff;
@@ -304,12 +307,14 @@ for ddd=1:iterations
     
     sourceV=sourceVapprox+0.5*(sourceV-sourceVapprox);
     
-    if verb; toc; end
     if visu
         delete(h)
         h=trisurf(sourceF,sourceV(:,1),sourceV(:,2),sourceV(:,3),'FaceColor','y','Edgecolor','none');
         drawnow
     end
+    
+    if verb; textprogressbar(progressbarvector(ddd)); end
 end
+if verb; textprogressbar(' Done.'); end
 
 registered=sourceV;
