@@ -14,6 +14,7 @@ function [registered,targetV,targetF]=nonrigidICP(targetV,sourceV,targetF,source
 %       true if the data is already alligned (manual or landmark based)
 %       false if the data still need to be roughly alligned
 %   -'visualization': true (default) or false
+%   -'verbose': true (default) or false
 %
 % OUTPUT
 %   -registered: registered source vertices on target mesh. Faces are not
@@ -56,23 +57,26 @@ if isstruct(targetV)
 end
         
 p = inputParser;
-addOptional(p,'iterations',10,...
+addParameter(p,'iterations',10,...
     @(x)validateattributes(x,{'numeric'},{'scalar', '>',1, '<', 100}));
-addOptional(p,'preAllFlag',false,@islogical);
-addOptional(p,'visualization',true,@islogical);
+addParameter(p,'preAllFlag',false,@islogical);
+addParameter(p,'visualization',true,@islogical);
+addParameter(p,'verbose',true,@islogical);
 parse(p,varargin{:});
 
 iterations=p.Results.iterations;
 preAllFlag=p.Results.preAllFlag;
 visu = p.Results.visualization;
+verb = p.Results.verbose;
 
+if verb; disp('Starting non-rigid ICP ...'); end
 %% remove duplicate vertices
 [targetV, ~, indexn] =  unique(targetV, 'rows');
 targetF = indexn(targetF);
 
 
 %% assesment of meshes quality and simplification/improvement
-disp('Remeshing and simplification of the target mesh');
+if verb; disp(' - Remeshing and simplification of the target mesh'); end
 [cutoff, ~] = definecutoff( sourceV, sourceF );
 
 [Indices_edgesS]=detectedges(sourceV,sourceF);
@@ -94,7 +98,7 @@ end
 
 
 %% initial allignment and scaling
-disp('Rigid allignement of source and target mesh');
+if verb; disp(' - Rigid allignement of source and target mesh'); end
 
 if preAllFlag==1
     [~,sourceV,~]=rigidICP(targetV,sourceV,1,Indices_edgesS,Indices_edgesT);
@@ -120,7 +124,7 @@ end
 
 
 %% General deformation
-disp('General deformation');
+if verb; disp(' - General deformation'); end
 kernel1=1.5:-(0.5/iterations):1;
 kernel2=2.4:(0.3/iterations):2.7;
 for i =1:iterations
@@ -204,7 +208,7 @@ end
 
 
 %% local deformation
-disp('Local optimization');
+if verb; disp(' - Local optimization'); end
 arraymap = repmat(cell(1),p,1);
 kk=12+iterations;
 
@@ -234,7 +238,7 @@ end
 
 for ddd=1:iterations
     k=kk-ddd;
-    tic
+    if verb; tic; end
     
     TRS = triangulation(sourceF,sourceV);
     normalsS=vertexNormal(TRS).*cutoff;
@@ -300,7 +304,7 @@ for ddd=1:iterations
     
     sourceV=sourceVapprox+0.5*(sourceV-sourceVapprox);
     
-    toc
+    if verb; toc; end
     if visu
         delete(h)
         h=trisurf(sourceF,sourceV(:,1),sourceV(:,2),sourceV(:,3),'FaceColor','y','Edgecolor','none');
